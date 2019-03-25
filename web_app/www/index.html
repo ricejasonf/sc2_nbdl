@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!--<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">-->
+
+  <!-- UIkit CSS -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/uikit/2.0/css/uikit.min.css" />
+  <link rel="stylesheet" href="style.css" />
+
+  <title>SC2 Nbdl Demo</title>
+  <!--<script src="/sc2_nbdl.web_app.js" > </script>-->
+</head>
+<body>
+<body>
+  <div id="web_main"> </div>
+  <script>
+    var script = document.createElement('script');
+    window.addEventListener('DOMContentLoaded', function() {
+      script.src = "/sc2_nbdl.web_app.js";
+      document.getElementsByTagName('head')[0].appendChild(script);
+    });
+  </script>
+</body>
+</html>

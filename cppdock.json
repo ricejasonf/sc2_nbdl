@@ -1,0 +1,42 @@
+{
+  "cppdock": {
+    "name": "sc2_nbdl"
+  },
+  "platforms": {
+    "web_develop": {
+      "type": "emscripten",
+      "base_image": "ricejasonf/parmexpr-emscripten",
+      "deps": [
+        [
+          {
+            "name": "ricejasonf/quick_project",
+            "tag": "master",
+            "revision": "0307a4c25eea44330d20a42471c2b43530cfe530"
+          }
+        ],
+        [
+          {
+            "name": "ricejasonf/nbdl",
+            "tag": "parmexpr",
+            "revision": "0cdc18389660f57157f200b1758aae3435bca098"
+          }
+        ],
+        [
+          {
+            "name": "ricejasonf/boost_header_only",
+            "tag": "1_70_0",
+            "source": "docker",
+            "revision": "sha256:5d385c9766123d5915bbaf6cefd2de19f74d386bb8b990f778907e57eb9d49fd"
+          }
+        ],
+        [
+          {
+            "name": "ldionne/dyno",
+            "tag": "master",
+            "revision": "8bc1dad0015737e6a952b184ac4672f90c409aed"
+          }
+        ]
+      ]
+    }
+  }
+}

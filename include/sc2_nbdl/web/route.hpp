@@ -14,7 +14,7 @@ namespace sc2_nbdl::web::route {
   // Any routes that have state would be defined here
 
   constexpr auto route_map = nbdl::webui::make_route_map(
-    nbdl::webui::route_pair<>("root"),
+    nbdl::webui::route_pair<>(""), // root
     nbdl::webui::route_pair<>("legal")
   );
 

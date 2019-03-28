@@ -15,6 +15,7 @@ namespace sc2_nbdl::web::route {
 
   constexpr auto route_map = nbdl::webui::make_route_map(
     nbdl::webui::route_pair<>(""), // root
+    nbdl::webui::route_pair<>("sign-in"),
     nbdl::webui::route_pair<>("legal")
   );
 

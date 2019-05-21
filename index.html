@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <title>SC2 Nbdl Demo</title>
+  <meta charset="utf-8">
+  <!--<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">-->
+
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.css" />
+
+</head>
+<body>
+  <div id="web_main" style="height:100%"> </div>
+  <script>
+    window.Module = {};
+    if (window.location.hostname.endsWith('github.io')) {
+      window.Module.NBDL_WEBUI_NAV_URI_PREFIX = '/sc2_nbdl';
+    }
+
+    var script = document.createElement('script');
+    window.addEventListener('DOMContentLoaded', function() {
+      script.src = "/sc2_nbdl.web_app.js";
+      document.getElementsByTagName('head')[0].appendChild(script);
+    });
+  </script>
+</body>
+</html>

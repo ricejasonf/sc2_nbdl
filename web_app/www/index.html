@@ -19,7 +19,7 @@
 
     var script = document.createElement('script');
     window.addEventListener('DOMContentLoaded', function() {
-      script.src = "/sc2_nbdl.web_app.js";
+      script.src = window.Module.NBDL_WEBUI_NAV_URI_PREFIX + "/sc2_nbdl.web_app.js";
       document.getElementsByTagName('head')[0].appendChild(script);
     });
   </script>

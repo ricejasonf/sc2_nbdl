@@ -12,6 +12,11 @@
 <body>
   <div id="web_main" style="height:100%"> </div>
   <script>
+    window.Module = {};
+    if (window.location.hostname.endsWith('github.io')) {
+      window.Module.NBDL_WEBUI_NAV_URI_PREFIX = '/sc2_nbdl';
+    }
+
     var script = document.createElement('script');
     window.addEventListener('DOMContentLoaded', function() {
       script.src = "/sc2_nbdl.web_app.js";

@@ -3,7 +3,7 @@
     "name": "sc2_nbdl"
   },
   "platforms": {
-    "web_develop": {
+    "web_app": {
       "type": "emscripten",
       "base_image": "ricejasonf/parmexpr-emscripten",
       "deps": [
@@ -34,6 +34,46 @@
             "name": "ldionne/dyno",
             "tag": "master",
             "revision": "8bc1dad0015737e6a952b184ac4672f90c409aed"
+          }
+        ]
+      ]
+    },
+    "server": {
+      "type": "linux_x64",
+      "base_image": "ricejasonf/parmexpr",
+      "deps": [
+        [
+          {
+            "name": "ricejasonf/quick_project",
+            "tag": "master",
+            "revision": "0307a4c25eea44330d20a42471c2b43530cfe530"
+          }
+        ],
+        [
+          {
+            "name": "open-source-parsers/jsoncpp",
+            "revision": "a679dde58d675e75eaf0fe31f62e833868e2f22d",
+            "tag": "refs/tags/1.8.1"
+          },
+          {
+            "name": "ricejasonf/nbdl",
+            "tag": "parmexpr",
+            "revision": "b9e836bfb7ba3f1061cad5b8a5b01c19cbe4c007"
+          }
+        ],
+        [
+          {
+            "name": "ricejasonf/full_duplex",
+            "tag": "master",
+            "revision": "eb6b16337d37831fe6c3fa047d166cab212fa8aa"
+          }
+        ],
+        [
+          {
+            "name": "ricejasonf/boost_header_only",
+            "tag": "1_70_0",
+            "source": "docker",
+            "revision": "sha256:5d385c9766123d5915bbaf6cefd2de19f74d386bb8b990f778907e57eb9d49fd"
           }
         ]
       ]

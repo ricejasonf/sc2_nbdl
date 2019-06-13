@@ -26,4 +26,7 @@ endif(quick_project)
 
 if (EMSCRIPTEN)
   add_subdirectory(web_app)
-endif (EMSCRIPTEN)
+else()
+  add_subdirectory(server)
+endif ()
+

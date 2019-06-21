@@ -35,7 +35,7 @@ namespace sc2_nbdl::server {
   });
 
   constexpr auto deserialize_message = promise([](auto& resolve,
-                                               auto const& msg_buf) {
+                                                  auto const& msg_buf) {
     using full_duplex::make_error;
     api::upstream_variant var;
 
@@ -61,7 +61,7 @@ namespace sc2_nbdl::server {
   });
 
   constexpr auto apply_read = promise([](auto& resolve, auto&& msg) {
-    nbdl::apply_message(resolve.get_state().get().context,
+    nbdl::apply_message(resolve.get_state().context,
                         std::forward<decltype(msg)>(msg));
     resolve(void_input);
   });
@@ -97,67 +97,18 @@ namespace sc2_nbdl::server {
     return full_duplex::endpoint_open(
       state,
       std::queue<std::string>{},
-      endpoint(
-        event::init           = do_(authenticate, register_conn),
-        event::read_message   = do_(deserialize_message, apply_read),
-        event::write_message  = serialize_message,
-        event::error          = log_error
-      //event::terminate      = unregister_conn
+      endpoint_compose(
+        beast_ws::message_endpoint,
+        endpoint(
+          event::init           = do_(authenticate, register_conn),
+          event::read_message   = do_(deserialize_message, apply_read),
+          event::write_message  = serialize_message
+          event::error          = log_error
+        //event::terminate      = unregister_conn
+        )
       )
     ).get();
   }
-
-#if 0 // moved into server_impl
-  // connection_manager exists because we push messages
-  // it owns nothing but a list of pointers to self
-  // managed objects
-  template <typename Context>
-  class connection_manager {
-    struct handle {
-      tcp::socket socket;
-      connection_manager& manager;
-
-      Context get_context() {
-        return manager.context;
-      }
-
-      template <typename Conn>
-      void register_connection(Conn&& c) {
-        manager.connections.append(std::forward<Conn>(c));
-      }
-
-      template <typename Conn>
-      void unregister_connection(Conn const& c) {
-        auto itr = std::find(manager.connections.begin(),
-                             manager.connections.end(), std::forward<Conn>(c));
-        if (itr != manager.connections.end()) {
-          manager.connections.erase(itr);
-        }
-      }
-    };
-
-    connection_manager(Context ctx)
-      : context(ctx)
-      , connections()
-    { }
-
-    connection_manager(connection_manager const&) = delete;
-
-    using Connection = decltype(connection_open(
-          std::declval<handle>()));
-
-    Context context;
-    std::vector<Connection> connections;
-
-  public:
-    // This is called with the result of
-    // something like async_accept.
-    // The socket is already connected
-    void create(tcp::socket socket) {
-      connection_open(handle{std::move(socket), *this});
-    };
-  };
-#endif
 }
 
 #endif

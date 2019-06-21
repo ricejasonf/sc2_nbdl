@@ -14,41 +14,73 @@
 #include <full_duplex.hpp>
 #include <nbdl.hpp>
 #include <queue>
-#include <string>
+#include <string_view>
 #include <vector>
 
 namespace sc2_nbdl::server {
   namespace beast_ws = nbdl::ext::beast_ws;
+  namespace net = boost::asio;
+  using stream_t = beast_ws::stream_t;
 
   // server - The construction arg for make_context
   struct server {
-    asio::io_service& io;
+    net::io_service& io;
     int port;
   };
+
+  void error_log(std::string_view) { }
 
   template <typename Context>
   struct server_impl {
     using hana_tag = server;
 
+    tcp::acceptor acceptor_;
+    stream_t stream_;
+    boost::system::error_code ec;
+
     server_impl(server_impl const&) = delete;
 
     server_impl(nbdl::actor_initializer<Context, server> a)
-      : server_(a.value)
-      , connections(a.context)
-    { }
+      : connections(a.context)
+      , acceptor_(a.io)
+    {
+      tcp::endpoint endpoint{tcp::v4(), a.port};
 
-    struct handle {
+      // open the acceptor syncronously
+      acceptor_.open(endpoint.protocol(), ec)
+      if (ec) {
+        error_log("open");
+        return;
+      }
+      acceptor_.set_option(net::socket_base::reuse_address(true), ec);
+      if (ec) {
+        error_log("set_option");
+        return;
+      }
+      acceptor_.bind(endpoint, ec)
+      if (ec) {
+        error_log("bind");
+        return;
+      }
+      acceptor.listen(net::socket_base::max_listening_connections, ec);
+      if (ec) {
+        error_log("listen");
+        return;
+      }
+    }
+
+    auto& acceptor() { return acceptor_; }
+    auto& stream()   { return stream_; }
+    auto& socket()   { return stream_.next_layer(); }
+
+    struct connection_state {
       // eventually replace tcp::socket with something that includes
       // http request information to get the session cookie
-      tcp::socket socket_;
+      stream_t stream_;
       server_impl& serv_;
 
       Context get_context() {
         return serv_.context;
-      }
-
-      tcp::socket& get_socket() {
-        return socket_;
       }
 
       template <typename Conn>
@@ -67,9 +99,8 @@ namespace sc2_nbdl::server {
     };
 
     using Connection = decltype(connection_open(
-          std::declval<handle>()));
+          std::declval<connection_state>()));
 
-    server server_;
     std::vector<Connection> connections;
 
 
@@ -78,13 +109,28 @@ namespace sc2_nbdl::server {
       using full_duplex::map;
       using full_duplex::void_input;
 
-      full_duplex::run_async_loop(
-        beast_ws::accept_socket(tcp::acceptor{server_.io},
-                                tcp::endpoint{tcp::v4(), server_.port}),
+      if (ec) return;
 
-        map([this](tcp::socket socket) {
+      full_duplex::run_async_loop_with_state(
+        *this
+        beast_ws::accept,
+#if 0
+        full_duplex::tap([&](auto& stream ) {
+          // TODO check session token
+        }),
+#endif
+        promise([](auto& resolve, auto stream) {
           // create connection object add to connections list
-          connection_open(handle{std::move(socket), *this});
+          connection_open(connection_state{std::move(stream), *this});
+          return void_input{};
+        }),
+        promise_any([](auto& resolve, auto&& val) {
+          if constexpr(full_duplex::is_error(val)) {
+            boost::system::error_code code = val;
+            // TODO log error message
+          }
+          // TODO handle any error
+          //      The server will continue to accept connections
           return void_input{};
         })
       );
@@ -110,7 +156,7 @@ namespace nbdl {
   };
 #endif
   template <typename Context>
-  struct actor_type<server_impl<sc2_nbdl::server, Context>> {
+  struct actor_type<sc2_nbdl::server, Context> {
     using type = sc2_nbdl::server_impl<Context>;
   };
 

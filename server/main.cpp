@@ -11,8 +11,4 @@ int main() {
   static auto context = sc2_nbdl::server::make_context(
     nbdl::actor("websocket_server", sc2_nbdl::server::server{io, port})
   );
-
-  // FIXME should use nbdl::actor_init which
-  // does not exist yet
-  context.actor<1>().start_accepting();
 }

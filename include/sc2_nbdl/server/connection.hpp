@@ -13,11 +13,13 @@
 #include <functional>
 #include <nbdl.hpp>
 #include <nbdl/binder/jsoncpp.hpp>
+#include <nbdl/ext/beast_ws.hpp>
 #include <queue>
 #include <string>
 #include <vector>
 
 namespace sc2_nbdl::server {
+  namespace beast_ws = nbdl::ext::beast_ws;
   namespace hana = boost::hana;
   using full_duplex::promise;
   using full_duplex::tap;
@@ -102,9 +104,9 @@ namespace sc2_nbdl::server {
         endpoint(
           event::init           = do_(authenticate, register_conn),
           event::read_message   = do_(deserialize_message, apply_read),
-          event::write_message  = serialize_message
-          event::error          = log_error
-        //event::terminate      = unregister_conn
+          event::write_message  = serialize_message,
+          event::error          = log_error,
+          event::terminate      = unregister_conn
         )
       )
     ).get();

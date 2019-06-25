@@ -13,6 +13,14 @@ target_include_directories(
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}../include
 )
 
+add_custom_target(
+  run.sc2_nbdl.server
+  COMMAND "sc2_nbdl.server"
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  DEPENDS sc2_nbdl.server
+  COMMENT "Build and run sc2_nbdl.server"
+)
+
 install(
   TARGETS sc2_nbdl.server
   RUNTIME DESTINATION bin

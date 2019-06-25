@@ -1,3 +1,5 @@
+  #include <iostream>
+
 #include <sc2_nbdl/server/context.hpp>
 #include <sc2_nbdl/server/server.hpp>
 
@@ -6,9 +8,11 @@
 
 int main() {
   boost::asio::io_service io{};
-  int port = 5050;
+  unsigned short port = 5050;
 
-  static auto context = sc2_nbdl::server::make_context(
+  auto context = sc2_nbdl::server::make_context(
     nbdl::actor("websocket_server", sc2_nbdl::server::server{io, port})
   );
+
+  io.run();
 }

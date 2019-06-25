@@ -10,6 +10,7 @@
 // The Consumer that manages messaging to socket clients
 
 #include <full_duplex.hpp>
+#include <full_duplex/future.hpp>
 #include <functional>
 #include <nbdl.hpp>
 #include <nbdl/binder/jsoncpp.hpp>
@@ -21,49 +22,58 @@
 namespace sc2_nbdl::server {
   namespace beast_ws = nbdl::ext::beast_ws;
   namespace hana = boost::hana;
+  using full_duplex::do_;
+  using full_duplex::map;
   using full_duplex::promise;
   using full_duplex::tap;
   using full_duplex::void_input;
 
-  constexpr auto authenticate = promise([](auto& resolve, auto& self) {
+  constexpr auto authenticate = promise([](auto& resolve, auto&& x) {
     // we should already have a token from a cookie or something
     // check against the db or whatever
     // must resolve self
-    resolve(self);
+    resolve(std::forward<decltype(x)>(x));
   });
 
-  constexpr auto serialize_message = full_duplex::map([](auto&& obj) {
-    return nbdl::binder::jsoncpp::to_string(obj);
-  });
+  constexpr auto serialize_message = [] {
+    return do_(
+      // TODO map to downstream variant
+      tap([](auto&& foo) { foo.foo(); }),
+      map(nbdl::binder::jsoncpp::to_string),
+      map(full_duplex::future<std::string>())
+    );
+  };
 
-  constexpr auto deserialize_message = promise([](auto& resolve,
-                                                  auto const& msg_buf) {
-    using full_duplex::make_error;
-    api::upstream_variant var;
+  constexpr auto deserialize_message = [] {
+    return promise([](auto& resolve,
+                      std::string const& msg_buf) {
+      using full_duplex::make_error;
+      api::upstream_variant var;
 
-    try {
-      nbdl::binder::jsoncpp::from_string(msg_buf, var);
-    } catch(...) {
-      resolve(make_error("JSONCPP Parse Error"));
-    }
+      try {
+        nbdl::binder::jsoncpp::from_string(msg_buf, var);
+      } catch(...) {
+        resolve(make_error("JSONCPP Parse Error"));
+      }
 
-    nbdl::match(var, hana::overload_linearly(
-      [&resolve](nbdl::unresolved) {
-        // this should not happen unless we get
-        // garbage input or something
-        resolve(make_error("Unknown Error"));
-      },
-      [&resolve](system_message sys_msg) {
-        // something bad happened?
-        resolve(make_error(std::move(sys_msg)));
-      },
-      [&resolve](auto&& msg) {
-        resolve(std::forward<decltype(msg)>(msg));
-      }));
-  });
+      nbdl::match(var, hana::overload_linearly(
+        [&resolve](nbdl::unresolved) {
+          // this should not happen unless we get
+          // garbage input or something
+          resolve(make_error("Unknown Error"));
+        },
+        [&resolve](system_message sys_msg) {
+          // something bad happened?
+          resolve(make_error(std::move(sys_msg)));
+        },
+        [&resolve](auto&& msg) {
+          resolve(std::forward<decltype(msg)>(msg));
+        }));
+    });
+  };
 
   constexpr auto apply_read = promise([](auto& resolve, auto&& msg) {
-    nbdl::apply_message(resolve.get_state().context,
+    nbdl::apply_message(resolve.get_state().context(),
                         std::forward<decltype(msg)>(msg));
     resolve(void_input);
   });
@@ -72,16 +82,20 @@ namespace sc2_nbdl::server {
     //std::cerr << '\n' << err << '\n';
   });
 
-  constexpr auto register_conn = tap([](auto& self) {
-    self.get_state().get().register_connection(self);
-  });
+  constexpr auto register_conn = [](auto& self) {
+    return tap([&](auto&&) {
+      self.state().register_connection(self);
+    });
+  };
 
-  constexpr auto unregister_conn = tap([](auto& self) {
-    self.get_state().get().unregister_connection(self);
-  });
+  constexpr auto unregister_conn = [](auto& self) {
+    return tap([&](auto&&) {
+      self.state().unregister_connection(self);
+    });
+  };
 
   template <typename State>
-  auto connection_open(State& state) {
+  auto connection_open(State state) {
     using full_duplex::do_;
     using full_duplex::endpoint;
     using full_duplex::endpoint_compose;
@@ -97,17 +111,24 @@ namespace sc2_nbdl::server {
     // just to find it in the container
     // (it would have to via shared_from_this)
     return full_duplex::endpoint_open(
-      state,
+      std::move(state),
       std::queue<std::string>{},
       endpoint_compose(
-        beast_ws::message_endpoint,
+        //beast_ws::message_endpoint,
         endpoint(
-          event::init           = do_(authenticate, register_conn),
-          event::read_message   = do_(deserialize_message, apply_read),
-          event::write_message  = serialize_message,
+          event::write_message = tap([](auto&& foo) {
+            foo.foo();
+          })
+        )
+#if 0
+        endpoint(
+          event::init           = register_conn,
+          event::read_message   = do_(deserialize_message(), apply_read),
+          event::write_message  = serialize_message(),
           event::error          = log_error,
           event::terminate      = unregister_conn
         )
+#endif
       )
     ).get();
   }

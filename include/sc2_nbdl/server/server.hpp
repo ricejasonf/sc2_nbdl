@@ -14,6 +14,7 @@
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
 #include <full_duplex.hpp>
+#include <iostream>
 #include <nbdl.hpp>
 #include <string_view>
 #include <vector>
@@ -26,15 +27,18 @@ namespace sc2_nbdl::server {
   // server - The construction arg for make_context
   struct server {
     net::io_service& io;
-    int port;
+    unsigned short port;
   };
 
-  void error_log(std::string_view) { }
+  void error_log(std::string_view err) {
+    std::cerr << "HARD FAIL: << " << err << '\n';
+  }
 
   template <typename Context>
   struct server_impl {
     using hana_tag = server;
 
+    Context context;
     tcp::acceptor acceptor_;
     beast_ws::stream_t stream_;
     boost::system::error_code ec;
@@ -42,10 +46,11 @@ namespace sc2_nbdl::server {
     server_impl(server_impl const&) = delete;
 
     server_impl(nbdl::actor_initializer<Context, server> a)
-      : connections(a.context)
-      , acceptor_(a.io)
+      : context(a.context)
+      , acceptor_(a.value.io)
+      , stream_(a.value.io)
     {
-      tcp::endpoint endpoint{tcp::v4(), a.port};
+      tcp::endpoint endpoint{tcp::v4(), a.value.port};
 
       // open the acceptor syncronously
       acceptor_.open(endpoint.protocol(), ec);
@@ -80,19 +85,22 @@ namespace sc2_nbdl::server {
       beast_ws::stream_t stream_;
       server_impl& serv_;
 
-      Context get_context() {
+      Context context() {
         return serv_.context;
       }
 
+      auto& stream()   { return stream_; }
+      auto& socket()   { return stream_.next_layer(); }
+
       template <typename Conn>
-      void register_connection(Conn&& c) {
-        serv_.connections.append(std::forward<Conn>(c));
+      void register_connection(Conn& c) {
+        serv_.connections.push_back(&c);
       }
 
       template <typename Conn>
       void unregister_connection(Conn const& c) {
         auto itr = std::find(serv_.connections.begin(),
-                             serv_.connections.end(), std::forward<Conn>(c));
+                             serv_.connections.end(), &c);
         if (itr != serv_.connections.end()) {
           serv_.connections.erase(itr);
         }
@@ -102,7 +110,7 @@ namespace sc2_nbdl::server {
     using Connection = decltype(connection_open(
           std::declval<connection_state>()));
 
-    std::vector<Connection> connections;
+    std::vector<Connection> connections = {};
 
 
     void start_accepting() {
@@ -110,7 +118,10 @@ namespace sc2_nbdl::server {
       using full_duplex::map;
       using full_duplex::void_input;
 
-      if (ec) return;
+      if (ec) {
+        std::cerr << "An error occurred before accept loop\n";
+        return;
+      }
 
       full_duplex::run_async_loop_with_state(
         *this,
@@ -139,7 +150,7 @@ namespace sc2_nbdl::server {
     template <typename Message>
     void send_message(Message const& m) {
       for (auto& conn : connections) {
-        conn.send_message(m);
+        conn->send_message(m);
       }
     }
   };

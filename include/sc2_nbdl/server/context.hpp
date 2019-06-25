@@ -13,6 +13,8 @@
 #include <nbdl.hpp>
 
 namespace sc2_nbdl::server {
+  struct server; // fwd decl
+
   struct context_tag {
     // Defines all of the Actors to be used in the application
     static constexpr auto make_def() {
@@ -35,6 +37,10 @@ namespace sc2_nbdl::server {
         ),
         Consumers(
           // TODO specify websocket server here
+          Consumer(
+            Name("websocket_server"),
+            Type<sc2_nbdl::server::server>
+          )
         )
       );
     }

@@ -10,6 +10,7 @@
 // The Consumer that manages messaging to socket clients
 
 #include <sc2_nbdl/server/connection.hpp>
+#include <sc2_nbdl/server/serializer.hpp>
 
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
@@ -42,6 +43,7 @@ namespace sc2_nbdl::server {
     tcp::acceptor acceptor_;
     beast_ws::stream_t stream_;
     boost::system::error_code ec;
+    serializer serializer_ = {};
 
     server_impl(server_impl const&) = delete;
 
@@ -114,8 +116,9 @@ namespace sc2_nbdl::server {
 
 
     void start_accepting() {
-      using full_duplex::promise;
       using full_duplex::map;
+      using full_duplex::map_any;
+      using full_duplex::promise;
       using full_duplex::void_input;
 
       if (ec) {
@@ -124,7 +127,7 @@ namespace sc2_nbdl::server {
       }
 
       full_duplex::run_async_loop_with_state(
-        *this,
+        std::ref(*this),
         beast_ws::accept,
 #if 0
         full_duplex::tap([&](auto& stream ) {
@@ -138,7 +141,7 @@ namespace sc2_nbdl::server {
         }),
         map_any([](auto&& val) {
           if constexpr(full_duplex::is_error<decltype(val)>) {
-            boost::system::error_code code = val;
+            boost::system::error_code code = val.value;
             (void) code;
             // TODO log error message
           }
@@ -150,7 +153,7 @@ namespace sc2_nbdl::server {
     template <typename Message>
     void send_message(Message const& m) {
       for (auto& conn : connections) {
-        conn->send_message(m);
+        conn->send_message(serializer_.serialize(m));
       }
     }
   };

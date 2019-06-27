@@ -114,21 +114,13 @@ namespace sc2_nbdl::server {
       std::move(state),
       std::queue<std::string>{},
       endpoint_compose(
-        //beast_ws::message_endpoint,
-        endpoint(
-          event::write_message = tap([](auto&& foo) {
-            foo.foo();
-          })
-        )
-#if 0
+        beast_ws::message_endpoint,
         endpoint(
           event::init           = register_conn,
           event::read_message   = do_(deserialize_message(), apply_read),
-          event::write_message  = serialize_message(),
           event::error          = log_error,
           event::terminate      = unregister_conn
         )
-#endif
       )
     ).get();
   }

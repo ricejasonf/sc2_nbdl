@@ -2,6 +2,8 @@ add_executable(sc2_nbdl.server main.cpp)
 
 add_definitions(-DBOOST_ASIO_STANDALONE -DBOOST_ASIO_NO_TYPEID)
 
+find_library(JsonCpp jsoncpp)
+
 target_link_libraries(
   sc2_nbdl.server
   PRIVATE ${JsonCpp}

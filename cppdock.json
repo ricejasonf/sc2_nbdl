@@ -7,7 +7,7 @@
       "type": "emscripten",
       "base_image": "ricejasonf/parmexpr-emscripten",
       "web_root": "/opt/build/web_app/www",
-      "dev_command": "make sc2_nbdl.web_app && tail -f /dev/null",
+      "target": "sc2_nbdl.web_app",
       "deps": [
         [
           {
@@ -44,6 +44,7 @@
       "type": "linux_x64",
       "base_image": "ricejasonf/parmexpr",
       "dev_command": "make run.sc2_nbdl.server",
+      "service_target": "run.sc2_nbdl.server",
       "deps": [
         [
           {

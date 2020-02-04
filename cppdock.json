@@ -1,8 +1,15 @@
 {
   "cppdock": {
-    "name": "sc2_nbdl"
+    "name": "sc2_nbdl",
+    "domain": "sc2_nbdl.test"
   },
   "platforms": {
+    "nginx_proxy": {
+      "type": "service:nginx_proxy"
+    },
+    "database": {
+      "type": "service:postgres"
+    },
     "web_app": {
       "type": "emscripten",
       "base_image": "ricejasonf/parmexpr-emscripten",
